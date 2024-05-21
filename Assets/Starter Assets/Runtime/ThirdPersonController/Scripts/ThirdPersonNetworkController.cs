@@ -1,6 +1,6 @@
-using UnityEngine;
 using Fusion;
 using StarterAssets;
+using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class ThirdPersonNetworkController : NetworkBehaviour
@@ -68,10 +68,12 @@ public class ThirdPersonNetworkController : NetworkBehaviour
 
     // cinemachine
     private float _cinemachineTargetYaw;
+
     private float _cinemachineTargetPitch;
 
     // player
     private float _speed;
+
     private float _animationBlend;
     private float _targetRotation = 0.0f;
     private float _rotationVelocity;
@@ -80,10 +82,12 @@ public class ThirdPersonNetworkController : NetworkBehaviour
 
     // timeout deltatime
     private float _jumpTimeoutDelta;
+
     private float _fallTimeoutDelta;
 
     // animation IDs
     private int _animIDSpeed;
+
     private int _animIDGrounded;
     private int _animIDJump;
     private int _animIDFreeFall;
@@ -117,7 +121,6 @@ public class ThirdPersonNetworkController : NetworkBehaviour
     {
         _cinemachineTargetYaw = CinemachineCameraTarget.transform.rotation.eulerAngles.y;
     }
-
 
     private void Awake()
     {
@@ -156,19 +159,10 @@ public class ThirdPersonNetworkController : NetworkBehaviour
 
         _hasAnimator = TryGetComponent(out _animator);
 
-        JumpAndGravity();
+        //JumpAndGravity();
         GroundedCheck();
         Move();
     }
-
-    //private void Update()
-    //{
-    //    _hasAnimator = TryGetComponent(out _animator);
-
-    //    JumpAndGravity();
-    //    GroundedCheck();
-    //    Move();
-    //}
 
     private void LateUpdate()
     {
@@ -244,7 +238,7 @@ public class ThirdPersonNetworkController : NetworkBehaviour
             // creates curved result rather than a linear one giving a more organic speed change
             // note T in Lerp is clamped, so we don't need to clamp our speed
             _speed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed * inputMagnitude,
-                Runner.DeltaTime * SpeedChangeRate);
+               Runner.DeltaTime * SpeedChangeRate);
 
             // round speed to 3 decimal places
             _speed = Mathf.Round(_speed * 1000f) / 1000f;
@@ -254,7 +248,7 @@ public class ThirdPersonNetworkController : NetworkBehaviour
             _speed = targetSpeed;
         }
 
-        _animationBlend = Mathf.Lerp(_animationBlend, targetSpeed, Time.deltaTime * SpeedChangeRate);
+        _animationBlend = Mathf.Lerp(_animationBlend, targetSpeed, Runner.DeltaTime * SpeedChangeRate);
         if (_animationBlend < 0.01f) _animationBlend = 0f;
 
         // normalise input direction
@@ -264,7 +258,7 @@ public class ThirdPersonNetworkController : NetworkBehaviour
         // if there is a move input rotate player when the player is moving
         if (_input.move != Vector2.zero)
         {
-            _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg +
+            _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg * _speed +
                               _mainCamera.transform.eulerAngles.y;
             float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity,
                 RotationSmoothTime);
@@ -273,12 +267,9 @@ public class ThirdPersonNetworkController : NetworkBehaviour
             transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
         }
 
-
-        Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
-
         // move the player
-        _controller.Move(targetDirection.normalized * _speed +
-                         new Vector3(0.0f, _verticalVelocity, 0.0f));
+        Vector3 vMove = new Vector3(_input.move.x, _verticalVelocity, _input.move.y) * Runner.DeltaTime * targetSpeed;
+        _controller.Move(vMove);
 
         // update animator if using character
         if (_hasAnimator)
