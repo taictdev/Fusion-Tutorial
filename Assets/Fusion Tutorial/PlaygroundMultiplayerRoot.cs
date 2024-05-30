@@ -1,7 +1,7 @@
 ﻿using Fusion;
 using UnityEngine;
 
-public class NetworkManager : MonoBehaviour
+public class PlaygroundMultiplayerRoot : MonoBehaviour
 {
     [SerializeField] private NetworkRunner _runner;
 
